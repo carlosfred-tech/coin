@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coins — Gold Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f0d0a;
+    --surface:#181410;
+    --surface-2:#221c15;
+    --line:#332a1e;
+    --gold:#c9a227;
+    --gold-bright:#e8c660;
+    --text:#f0ead9;
+    --text-muted:#948a72;
+    --green:#5f9a5c;
+    --green-bright:#7ec27a;
+    --red:#b2504a;
+    --red-bright:#d97a72;
+    --radius:2px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--gold);color:#0f0d0a;}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  input,select{font-family:inherit;}
+
+  /* ---------- Gold seam divider (signature element) ---------- */
+  .seam{
+    position:relative;
+    height:2px;
+    width:100%;
+    background:linear-gradient(90deg, transparent 0%, var(--line) 8%, var(--line) 92%, transparent 100%);
+    overflow:visible;
+  }
+  .seam::before{
+    content:'';
+    position:absolute;
+    top:-1px; left:0; right:0;
+    height:4px;
+    background:
+      repeating-linear-gradient(90deg,
+        transparent 0px, transparent 34px,
+        var(--gold) 36px, var(--gold-bright) 38px, var(--gold) 40px,
+        transparent 42px, transparent 76px);
+    opacity:0.55;
+    filter:blur(0.2px);
+  }
+  .seam::after{
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold-bright) 50%, var(--gold) 80%, transparent);
+    opacity:0.9;
+  }
+
+  /* ---------- Top nav ---------- */
+  header.site-nav{
+    position:fixed; top:0; left:0; right:0;
+    z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 5vw;
+    background:rgba(15,13,10,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces',serif; font-weight:600; font-size:1.4rem;
+    letter-spacing:0.5px;
+  }
+  .logo .mark{
+    width:26px;height:26px;border-radius:50%;
+    background:radial-gradient(circle at 32% 30%, var(--gold-bright), var(--gold) 60%, #7a5f16 100%);
+    box-shadow:0 0 12px rgba(201,162,39,0.4);
+    flex-shrink:0;
+  }
+  .nav-links{display:flex; gap:34px; align-items:center;}
+  .nav-links a{font-size:0.88rem; color:var(--text-muted); letter-spacing:0.3px; transition:color .2s;}
+  .nav-links a:hover{color:var(--gold-bright);}
+  .nav-cta{
+    padding:10px 22px;
+    border:1px solid var(--gold);
+    color:var(--gold-bright);
+    font-size:0.85rem;
+    letter-spacing:0.4px;
+    transition:all .2s;
+  }
+  .nav-cta:hover{background:var(--gold); color:#14110f;}
+  .nav-user{display:flex; align-items:center; gap:16px; font-size:0.85rem;}
+  .nav-user .bal{color:var(--gold-bright);}
+  .hidden{display:none !important;}
+
+  /* ---------- Landing ---------- */
+  main.landing{padding-top:88px;}
+  .hero{
+    display:grid; grid-template-columns:1.1fr 0.9fr;
+    gap:40px;
+    padding:90px 5vw 70px;
+    align-items:center;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.72rem; letter-spacing:2.5px; text-transform:uppercase;
+    color:var(--gold); margin-bottom:22px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:22px; height:1px; background:var(--gold);}
+  .hero h1{
+    font-size:clamp(2.6rem, 5.2vw, 4.4rem);
+    font-weight:600;
+    line-height:1.05;
+    letter-spacing:-0.5px;
+  }
+  .hero h1 em{font-style:italic; font-weight:300; color:var(--gold-bright);}
+  .hero p.lede{
+    margin-top:22px; max-width:480px;
+    color:var(--text-muted); font-size:1.05rem; line-height:1.65;
+  }
+  .hero-actions{display:flex; gap:16px; margin-top:36px; flex-wrap:wrap;}
+  .btn-primary{
+    padding:15px 30px;
+    background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color:#14110f; font-weight:600; font-size:0.92rem; letter-spacing:0.3px;
+    border-radius:1px;
+    box-shadow:0 4px 20px rgba(201,162,39,0.25);
+    transition:transform .2s, box-shadow .2s;
+  }
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 8px 26px rgba(201,162,39,0.35);}
+  .btn-ghost{
+    padding:15px 28px;
+    border:1px solid var(--line);
+    font-size:0.92rem; color:var(--text-muted);
+    transition:border-color .2s, color .2s;
+  }
+  .btn-ghost:hover{border-color:var(--gold); color:var(--gold-bright);}
+
+  /* Assay card / hero visual */
+  .assay-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    padding:28px;
+    position:relative;
+  }
+  .assay-card::before{
+    content:'ASSAY · SPOT PRICE';
+    position:absolute; top:-11px; left:24px;
+    background:var(--bg);
+    padding:0 10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.65rem; letter-spacing:2px; color:var(--text-muted);
+  }
+  .price-row{display:flex; align-items:baseline; gap:12px; margin-top:10px;}
+  .price-row .sym{color:var(--text-muted); font-size:1rem;}
+  #spotPrice{font-family:'JetBrains Mono',monospace; font-size:2.6rem; font-weight:700; color:var(--gold-bright);}
+  .price-delta{font-family:'JetBrains Mono',monospace; font-size:0.95rem; margin-top:6px;}
+  .price-delta.up{color:var(--green-bright);}
+  .price-delta.down{color:var(--red-bright);}
+  #sparkline{width:100%; height:110px; margin-top:22px; display:block;}
+  .assay-meta{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    margin-top:20px; padding-top:18px; border-top:1px solid var(--line);
+    font-family:'JetBrains Mono',monospace; font-size:0.78rem;
+  }
+  .assay-meta .k{color:var(--text-muted); display:block; margin-bottom:3px; letter-spacing:0.5px;}
+  .assay-meta .v{color:var(--text);}
+
+  /* Feature strip */
+  .strip{
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:0;
+    padding:0 5vw;
+  }
+  .strip .stat{padding:36px 20px 36px 0; border-right:1px solid var(--line);}
+  .strip .stat:last-child{border-right:none;}
+  .strip .stat .num{font-family:'Fraunces',serif; font-size:2.1rem; font-weight:600; color:var(--gold-bright);}
+  .strip .stat .lbl{font-size:0.82rem; color:var(--text-muted); margin-top:6px;}
+
+  section{padding:70px 5vw;}
+  .section-head{max-width:600px; margin-bottom:48px;}
+  .section-head .eyebrow{margin-bottom:16px;}
+  .section-head h2{font-size:clamp(1.8rem,3vw,2.6rem); font-weight:600; line-height:1.15;}
+  .section-head p{color:var(--text-muted); margin-top:14px; line-height:1.6;}
+
+  .features-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line);}
+  .feature{background:var(--bg); padding:34px 28px;}
+  .feature .fi{
+    width:38px;height:38px; border:1px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--gold-bright); margin-bottom:20px; font-family:'JetBrains Mono',monospace; font-size:0.9rem;
+  }
+  .feature h3{font-size:1.15rem; font-weight:600; margin-bottom:10px;}
+  .feature p{color:var(--text-muted); font-size:0.92rem; line-height:1.6;}
+
+  .how-list{display:flex; flex-direction:column;}
+  .how-item{
+    display:grid; grid-template-columns:70px 1fr;
+    gap:24px; padding:26px 0; border-bottom:1px solid var(--line);
+    align-items:start;
+  }
+  .how-item:first-child{border-top:1px solid var(--line);}
+  .how-item .idx{font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.95rem;}
+  .how-item h4{font-size:1.1rem; font-weight:600; margin-bottom:6px;}
+  .how-item p{color:var(--text-muted); font-size:0.92rem; max-width:520px; line-height:1.6;}
+
+  footer{padding:40px 5vw; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;}
+  footer .fmuted{color:var(--text-muted); font-size:0.82rem;}
+
+  /* ---------- Auth modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,8,6,0.72);
+    backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    z-index:200; padding:20px;
+  }
+  .auth-box{
+    width:100%; max-width:400px;
+    background:var(--surface); border:1px solid var(--line);
+    padding:36px 32px; position:relative;
+  }
+  .auth-box .close-x{position:absolute; top:16px; right:18px; color:var(--text-muted); font-size:1.3rem;}
+  .auth-tabs{display:flex; gap:0; margin-bottom:26px; border-bottom:1px solid var(--line);}
+  .auth-tab{padding:10px 0; margin-right:28px; color:var(--text-muted); font-size:0.92rem; border-bottom:2px solid transparent;}
+  .auth-tab.active{color:var(--gold-bright); border-color:var(--gold);}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:0.78rem; color:var(--text-muted); margin-bottom:7px; letter-spacing:0.3px;}
+  .field input{
+    width:100%; padding:12px 13px; background:var(--surface-2);
+    border:1px solid var(--line); color:var(--text); font-size:0.92rem;
+  }
+  .field input:focus{outline:none; border-color:var(--gold);}
+  .auth-error{color:var(--red-bright); font-size:0.82rem; margin-bottom:14px; min-height:0;}
+  .auth-submit{width:100%; padding:13px; margin-top:6px;}
+  .auth-note{font-size:0.76rem; color:var(--text-muted); margin-top:16px; line-height:1.5; text-align:center;}
+
+  /* ---------- Dashboard ---------- */
+  .app{padding-top:64px; display:grid; grid-template-columns:220px 1fr; min-height:100vh;}
+  .sidebar{
+    border-right:1px solid var(--line); padding:26px 0;
+    position:sticky; top:64px; height:calc(100vh - 64px);
+  }
+  .side-link{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 26px; font-size:0.88rem; color:var(--text-muted);
+    border-left:2px solid transparent;
+  }
+  .side-link .dot{width:5px;height:5px;border-radius:50%;background:var(--text-muted);}
+  .side-link.active{color:var(--gold-bright); border-left-color:var(--gold); background:rgba(201,162,39,0.06);}
+  .side-link.active .dot{background:var(--gold-bright);}
+  .side-link:hover{color:var(--text);}
+
+  .panel-area{padding:36px 3.5vw;}
+  .app-view{display:none;}
+  .app-view.active{display:block;}
+
+  .topline{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:30px; flex-wrap:wrap; gap:16px;}
+  .topline h2{font-size:1.9rem; font-weight:600;}
+  .topline .sub{color:var(--text-muted); font-size:0.88rem; margin-top:6px;}
+
+  .cards-row{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); margin-bottom:36px;}
+  .kcard{background:var(--surface); padding:24px 26px;}
+  .kcard .k{font-size:0.76rem; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); font-family:'JetBrains Mono',monospace;}
+  .kcard .v{font-family:'JetBrains Mono',monospace; font-size:1.7rem; font-weight:700; margin-top:10px; color:var(--gold-bright);}
+  .kcard .v.plain{color:var(--text);}
+
+  .grid-2{display:grid; grid-template-columns:1.3fr 1fr; gap:1px; background:var(--line);}
+  .box{background:var(--bg); padding:28px;}
+  .box h3{font-size:1rem; font-weight:600; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center;}
+  .box h3 .live{font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--green-bright); letter-spacing:1px;}
+  #dashSpark{width:100%; height:180px;}
+
+  .trade-toggle{display:flex; border:1px solid var(--line); margin-bottom:20px;}
+  .trade-toggle button{flex:1; padding:11px; font-size:0.88rem; color:var(--text-muted);}
+  .trade-toggle button.active.buy{background:rgba(95,154,92,0.15); color:var(--green-bright);}
+  .trade-toggle button.active.sell{background:rgba(178,80,74,0.15); color:var(--red-bright);}
+  .trade-row{display:flex; justify-content:space-between; font-size:0.85rem; padding:9px 0; border-bottom:1px solid var(--line); color:var(--text-muted);}
+  .trade-row b{color:var(--text); font-family:'JetBrains Mono',monospace;}
+  .trade-submit{width:100%; margin-top:18px; padding:13px;}
+  .trade-submit.sell-mode{background:linear-gradient(180deg,var(--red-bright),var(--red)); color:#1a0e0c;}
+  .msg-line{font-size:0.8rem; margin-top:10px; min-height:16px;}
+  .msg-line.ok{color:var(--green-bright);}
+  .msg-line.err{color:var(--red-bright);}
+
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  thead th{
+    text-align:left; padding:10px 12px; color:var(--text-muted);
+    font-weight:500; font-size:0.72rem; letter-spacing:0.8px; text-transform:uppercase;
+    border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace;
+  }
+  tbody td{padding:12px; border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace;}
+  tbody tr:hover{background:var(--surface);}
+  .tag{padding:3px 9px; font-size:0.72rem; letter-spacing:0.5px; border-radius:1px;}
+  .tag.buy{background:rgba(95,154,92,0.15); color:var(--green-bright);}
+  .tag.sell{background:rgba(178,80,74,0.15); color:var(--red-bright);}
+  .tag.deposit{background:rgba(201,162,39,0.15); color:var(--gold-bright);}
+  .empty-row td{color:var(--text-muted); text-align:center; padding:30px; font-family:'Inter',sans-serif;}
+
+  .wallet-actions{display:flex; gap:14px; margin-top:6px; flex-wrap:wrap;}
+
+  @media(max-width:880px){
+    .hero{grid-template-columns:1fr; padding-top:60px;}
+    .strip{grid-template-columns:1fr 1fr;}
+    .strip .stat{border-right:none; border-bottom:1px solid var(--line);}
+    .features-grid{grid-template-columns:1fr;}
+    .app{grid-template-columns:1fr;}
+    .sidebar{position:static; height:auto; display:flex; overflow-x:auto; padding:14px 10px;}
+    .side-link{padding:10px 16px; white-space:nowrap; border-left:none; border-bottom:2px solid transparent;}
+    .side-link.active{border-left:none; border-bottom-color:var(--gold);}
+    .cards-row{grid-template-columns:1fr;}
+    .grid-2{grid-template-columns:1fr;}
+    .nav-links{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="site-nav">
+  <div class="logo"><span class="mark"></span>COINS</div>
+  <nav class="nav-links">
+    <a href="#market">Market</a>
+    <a href="#how">How it works</a>
+    <a href="#trust">Security</a>
+  </nav>
+  <div id="navGuest">
+    <button class="nav-cta" onclick="openAuth('login')">Sign in</button>
+  </div>
+  <div id="navUser" class="nav-user hidden">
+    <span>Balance: <span class="bal mono" id="navBalance">$0.00</span></span>
+    <button class="nav-cta" onclick="logout()">Sign out</button>
+  </div>
+</header>
+
+<!-- ============ LANDING ============ -->
+<main class="landing" id="landingView">
+  <section class="hero" style="padding-top:0;">
+    <div>
+      <div class="eyebrow">Digital Gold Exchange</div>
+      <h1>Own the <em>oldest</em><br>store of value.</h1>
+      <p class="lede">Coins lets you buy, hold and sell allocated gold in real time — no vault visits, no dealer markups, no waiting. Priced to the cent, settled instantly.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="openAuth('signup')">Open an account</button>
+        <a href="#market" class="btn-ghost">View live price →</a>
+      </div>
+    </div>
+
+    <div class="assay-card" id="market">
+      <div class="price-row">
+        <span class="sym">XAU / USD</span>
+        <span id="spotPrice">2,481.30</span>
+        <span>/ oz</span>
+      </div>
+      <div class="price-delta up" id="priceDelta">▲ 0.42% today</div>
+      <canvas id="sparkline"></canvas>
+      <div class="assay-meta">
+        <div><span class="k">24H HIGH</span><span class="v mono" id="metaHigh">2,489.10</span></div>
+        <div><span class="k">24H LOW</span><span class="v mono" id="metaLow">2,468.55</span></div>
+        <div><span class="k">PURITY</span><span class="v mono">999.9 FINE</span></div>
+        <div><span class="k">SETTLEMENT</span><span class="v mono">INSTANT</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="seam"></div>
+
+  <div class="strip">
+    <div class="stat"><div class="num mono">$2.4B+</div><div class="lbl">Gold held on platform</div></div>
+    <div class="stat"><div class="num mono">140k</div><div class="lbl">Active accounts</div></div>
+    <div class="stat"><div class="num mono">0.35%</div><div class="lbl">Avg. trade spread</div></div>
+    <div class="stat"><div class="num mono">24/7</div><div class="lbl">Market access</div></div>
+  </div>
+
+  <div class="seam"></div>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">Why Coins</div>
+      <h2>Built like a vault. Runs like an exchange.</h2>
+      <p>Every gram is allocated, every trade is logged, every price moves with the real spot market — simulated live for this demo.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature">
+        <div class="fi">01</div>
+        <h3>Allocated ownership</h3>
+        <p>You own specific, segregated gold — not a claim on a pool. Your holdings never sit on our balance sheet.</p>
+      </div>
+      <div class="feature">
+        <div class="fi">02</div>
+        <h3>Live spot pricing</h3>
+        <p>Prices track the global spot rate tick by tick, so what you see is what you pay — no hidden dealer premium.</p>
+      </div>
+      <div class="feature">
+        <div class="fi">03</div>
+        <h3>Instant settlement</h3>
+        <p>Buy and sell orders clear immediately into your wallet, with a full, exportable transaction record.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="seam"></div>
+
+  <section id="how">
+    <div class="section-head">
+      <div class="eyebrow">Process</div>
+      <h2>From account to ounces in minutes.</h2>
+    </div>
+    <div class="how-list">
+      <div class="how-item">
+        <div class="idx">01</div>
+        <div><h4>Open your account</h4><p>Create a Coins account with your email — verified instantly for this demo environment.</p></div>
+      </div>
+      <div class="how-item">
+        <div class="idx">02</div>
+        <div><h4>Fund your wallet</h4><p>Deposit cash balance into your Coins wallet to use for trading.</p></div>
+      </div>
+      <div class="how-item">
+        <div class="idx">03</div>
+        <div><h4>Buy or sell gold</h4><p>Trade at the live spot price — your holdings and balance update immediately.</p></div>
+      </div>
+      <div class="how-item">
+        <div class="idx">04</div>
+        <div><h4>Track your position</h4><p>Watch your portfolio value move with the market from your dashboard.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="seam"></div>
+
+  <section id="trust">
+    <div class="section-head">
+      <div class="eyebrow">A note on this build</div>
+      <h2>This is a front-end demo.</h2>
+      <p>Coins, as built here, is a self-contained HTML/CSS/JS interface. Prices are simulated locally, accounts and balances live only in this browser tab's memory, and nothing is persisted, transmitted, or connected to real markets or payment rails. It's meant as a interface and interaction template for a real trading product — not a live financial service.</p>
+    </div>
+  </section>
+
+  <div class="seam"></div>
+
+  <footer>
+    <div class="logo" style="font-size:1.05rem;"><span class="mark" style="width:18px;height:18px;"></span>COINS</div>
+    <div class="fmuted">Demo interface · Prices simulated · No real funds involved</div>
+  </footer>
+</main>
+
+<!-- ============ AUTH MODAL ============ -->
+<div class="overlay hidden" id="authOverlay">
+  <div class="auth-box">
+    <button class="close-x" onclick="closeAuth()">×</button>
+    <div class="auth-tabs">
+      <button class="auth-tab" id="tabLogin" onclick="switchTab('login')">Sign in</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Create account</button>
+    </div>
+    <div id="authError" class="auth-error"></div>
+
+    <form id="loginForm" onsubmit="return handleLogin(event)">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" required placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" required placeholder="••••••••"></div>
+      <button class="btn-primary auth-submit" type="submit">Sign in</button>
+      <div class="auth-note">Demo only — any email/password combination creates or signs you into a local session.</div>
+    </form>
+
+    <form id="signupForm" class="hidden" onsubmit="return handleSignup(event)">
+      <div class="field"><label>Full name</label><input type="text" id="signupName" required placeholder="Jane Doe"></div>
+      <div class="field"><label>Email</label><input type="email" id="signupEmail" required placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="signupPassword" required placeholder="Min. 6 characters" minlength="6"></div>
+      <button class="btn-primary auth-submit" type="submit">Create account</button>
+      <div class="auth-note">You'll start with a $10,000.00 simulated wallet balance to trade with.</div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP / DASHBOARD ============ -->
+<div class="app hidden" id="appView">
+  <aside class="sidebar">
+    <div class="side-link active" data-view="overview" onclick="switchAppView('overview')"><span class="dot"></span>Overview</div>
+    <div class="side-link" data-view="trade" onclick="switchAppView('trade')"><span class="dot"></span>Trade</div>
+    <div class="side-link" data-view="history" onclick="switchAppView('history')"><span class="dot"></span>History</div>
+    <div class="side-link" data-view="wallet" onclick="switchAppView('wallet')"><span class="dot"></span>Wallet</div>
+  </aside>
+
+  <div class="panel-area">
+
+    <!-- OVERVIEW -->
+    <div class="app-view active" id="view-overview">
+      <div class="topline">
+        <div><h2>Welcome back<span id="welcomeName"></span></h2><div class="sub">Here's where your account stands right now.</div></div>
+      </div>
+      <div class="cards-row">
+        <div class="kcard"><div class="k">Cash balance</div><div class="v" id="cardBalance">$0.00</div></div>
+        <div class="kcard"><div class="k">Gold held</div><div class="v" id="cardGold">0.0000 oz</div></div>
+        <div class="kcard"><div class="k">Portfolio value</div><div class="v" id="cardTotal">$0.00</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="box">
+          <h3>Spot price · XAU/USD <span class="live">● LIVE</span></h3>
+          <canvas id="dashSpark"></canvas>
+        </div>
+        <div class="box">
+          <h3>Recent activity</h3>
+          <table id="recentTable">
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRADE -->
+    <div class="app-view" id="view-trade">
+      <div class="topline">
+        <div><h2>Trade gold</h2><div class="sub">Current spot price updates live — orders fill instantly at market.</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="box">
+          <h3>Spot price · XAU/USD <span class="live">● LIVE</span></h3>
+          <div class="price-row" style="margin-bottom:6px;">
+            <span id="tradeSpot" class="mono" style="font-size:2rem; color:var(--gold-bright); font-weight:700;">2,481.30</span>
+            <span class="sym">USD / oz</span>
+          </div>
+          <canvas id="tradeSpark" style="height:150px;width:100%;"></canvas>
+        </div>
+        <div class="box">
+          <h3>Place order</h3>
+          <div class="trade-toggle">
+            <button class="active buy" id="btnBuyMode" onclick="setTradeMode('buy')">Buy</button>
+            <button class="sell" id="btnSellMode" onclick="setTradeMode('sell')">Sell</button>
+          </div>
+          <div class="field">
+            <label id="qtyLabel">Amount to buy (oz)</label>
+            <input type="number" id="tradeQty" min="0.0001" step="0.0001" placeholder="0.0000" oninput="updateTradePreview()">
+          </div>
+          <div class="trade-row"><span>Spot price</span><b id="prevSpot">$0.00</b></div>
+          <div class="trade-row"><span>Est. total</span><b id="prevTotal">$0.00</b></div>
+          <div class="trade-row"><span id="availLabel">Available cash</span><b id="prevAvail">$0.00</b></div>
+          <button class="btn-primary trade-submit" id="tradeSubmitBtn" onclick="submitTrade()">Buy gold</button>
+          <div class="msg-line" id="tradeMsg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="app-view" id="view-history">
+      <div class="topline">
+        <div><h2>Transaction history</h2><div class="sub">Every order and wallet movement on your account.</div></div>
+      </div>
+      <div class="box" style="padding:0;">
+        <table>
+          <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Price</th><th>Total</th></tr></thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WALLET -->
+    <div class="app-view" id="view-wallet">
+      <div class="topline">
+        <div><h2>Wallet</h2><div class="sub">Manage your simulated cash balance.</div></div>
+      </div>
+      <div class="cards-row" style="grid-template-columns:1fr;">
+        <div class="kcard"><div class="k">Cash balance</div><div class="v" id="walletBalance">$0.00</div></div>
+      </div>
+      <div class="box">
+        <h3>Add or withdraw funds</h3>
+        <div class="field" style="max-width:260px;">
+          <label>Amount (USD)</label>
+          <input type="number" id="walletAmount" min="1" step="1" placeholder="0.00">
+        </div>
+        <div class="wallet-actions">
+          <button class="btn-primary" style="padding:12px 24px;" onclick="walletAction('deposit')">Deposit</button>
+          <button class="btn-ghost" style="padding:12px 24px;" onclick="walletAction('withdraw')">Withdraw</button>
+        </div>
+        <div class="msg-line" id="walletMsg"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ===========================================================
+   COINS — demo gold trading interface
+   All state is in-memory only (no backend, no persistence).
+=========================================================== */
+
+// ---------- Price simulation ----------
+let spot = 2481.30;
+let dayOpen = spot;
+let dayHigh = spot + 7.8;
+let dayLow = spot - 12.75;
+let priceHistory = Array.from({length:60}, () => spot);
+
+function stepPrice(){
+  const drift = (Math.random()-0.5) * 3.2;
+  spot = Math.max(500, spot + drift);
+  dayHigh = Math.max(dayHigh, spot);
+  dayLow = Math.min(dayLow, spot);
+  priceHistory.push(spot);
+  if(priceHistory.length > 80) priceHistory.shift();
+  renderPrice();
+}
+
+function fmtMoney(n){
+  return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtNum(n){
+  return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function drawSpark(canvasId, color){
+  const c = document.getElementById(canvasId);
+  if(!c) return;
+  const rect = c.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  c.width = rect.width * dpr;
+  c.height = (rect.height || 110) * dpr;
+  const ctx = c.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height || 110;
+  ctx.clearRect(0,0,w,h);
+
+  const data = priceHistory;
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = (max - min) || 1;
+  const stepX = w / (data.length - 1);
+
+  // fill
+  ctx.beginPath();
+  data.forEach((p,i)=>{
+    const x = i*stepX;
+    const y = h - ((p-min)/range) * (h-14) - 6;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.lineTo(w, h);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0, color+'33');
+  grad.addColorStop(1, color+'00');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // line
+  ctx.beginPath();
+  data.forEach((p,i)=>{
+    const x = i*stepX;
+    const y = h - ((p-min)/range) * (h-14) - 6;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+}
+
+function renderPrice(){
+  const priceStr = fmtNum(spot);
+  const spotEls = ['spotPrice'];
+  document.getElementById('spotPrice').textContent = priceStr;
+  document.getElementById('tradeSpot').textContent = priceStr;
+
+  const changePct = ((spot - dayOpen)/dayOpen*100);
+  const deltaEl = document.getElementById('priceDelta');
+  const up = changePct >= 0;
+  deltaEl.className = 'price-delta ' + (up ? 'up':'down');
+  deltaEl.textContent = (up?'▲ ':'▼ ') + Math.abs(changePct).toFixed(2) + '% today';
+
+  document.getElementById('metaHigh').textContent = fmtNum(dayHigh);
+  document.getElementById('metaLow').textContent = fmtNum(dayLow);
+
+  drawSpark('sparkline', '#e8c660');
+  drawSpark('dashSpark', '#e8c660');
+  drawSpark('tradeSpark', '#e8c660');
+
+  updateTradePreview();
+  if(currentUser) renderOverview();
+}
+
+setInterval(stepPrice, 2000);
+window.addEventListener('resize', renderPrice);
+
+// ---------- Auth (in-memory only) ----------
+let users = {}; // email -> {name, password, balance, gold, tx: []}
+let currentUser = null;
+let authMode = 'login';
+
+function openAuth(mode){
+  document.getElementById('authOverlay').classList.remove('hidden');
+  switchTab(mode);
+}
+function closeAuth(){
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('authError').textContent = '';
+}
+function switchTab(mode){
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
+  document.getElementById('loginForm').classList.toggle('hidden', mode!=='login');
+  document.getElementById('signupForm').classList.toggle('hidden', mode!=='signup');
+  document.getElementById('authError').textContent = '';
+}
+
+function handleSignup(e){
+  e.preventDefault();
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+  const password = document.getElementById('signupPassword').value;
+  const errEl = document.getElementById('authError');
+
+  if(users[email]){
+    errEl.textContent = 'An account with that email already exists — try signing in instead.';
+    return false;
+  }
+  users[email] = {name, email, password, balance: 10000, gold: 0, tx: []};
+  logTx(email, 'deposit', null, null, 10000, 'Starting balance');
+  loginUser(email);
+  return false;
+}
+
+function handleLogin(e){
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('authError');
+
+  if(!users[email]){
+    // demo: auto-create account on first "login" so the flow never dead-ends
+    users[email] = {name: email.split('@')[0], email, password, balance: 10000, gold: 0, tx: []};
+    logTx(email, 'deposit', null, null, 10000, 'Starting balance');
+  } else if(users[email].password !== password){
+    errEl.textContent = 'Incorrect password for this demo session.';
+    return false;
+  }
+  loginUser(email);
+  return false;
+}
+
+function loginUser(email){
+  currentUser = email;
+  closeAuth();
+  document.getElementById('loginForm').reset();
+  document.getElementById('signupForm').reset();
+  document.getElementById('navGuest').classList.add('hidden');
+  document.getElementById('navUser').classList.remove('hidden');
+  document.getElementById('landingView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+  document.getElementById('welcomeName').textContent = ', ' + users[email].name.split(' ')[0];
+  switchAppView('overview');
+  renderOverview();
+  renderHistory();
+}
+
+function logout(){
+  currentUser = null;
+  document.getElementById('navGuest').classList.remove('hidden');
+  document.getElementById('navUser').classList.add('hidden');
+  document.getElementById('appView').classList.add('hidden');
+  document.getElementById('landingView').classList.remove('hidden');
+}
+
+// ---------- App view switching ----------
+function switchAppView(view){
+  document.querySelectorAll('.side-link').forEach(el=>el.classList.toggle('active', el.dataset.view===view));
+  document.querySelectorAll('.app-view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  if(view==='trade') updateTradePreview();
+  if(view==='history') renderHistory();
+  if(view==='wallet') renderWallet();
+}
+
+// ---------- Overview ----------
+function renderOverview(){
+  if(!currentUser) return;
+  const u = users[currentUser];
+  document.getElementById('cardBalance').textContent = fmtMoney(u.balance);
+  document.getElementById('cardGold').textContent = u.gold.toFixed(4) + ' oz';
+  document.getElementById('cardTotal').textContent = fmtMoney(u.balance + u.gold*spot);
+  document.getElementById('walletBalance').textContent = fmtMoney(u.balance);
+  document.getElementById('navBalance').textContent = fmtMoney(u.balance);
+
+  const tbody = document.querySelector('#recentTable tbody');
+  const recent = u.tx.slice(-5).reverse();
+  if(recent.length===0){
+    tbody.innerHTML = '<tr class="empty-row"><td>No activity yet — place your first trade.</td></tr>';
+  } else {
+    tbody.innerHTML = recent.map(t => `
+      <tr>
+        <td>${t.date}</td>
+        <td><span class="tag ${t.type}">${t.type}</span></td>
+        <td>${t.qty ? t.qty.toFixed(4)+' oz' : '—'}</td>
+        <td>${fmtMoney(t.total)}</td>
+      </tr>`).join('');
+  }
+}
+
+// ---------- Trade ----------
+let tradeMode = 'buy';
+function setTradeMode(mode){
+  tradeMode = mode;
+  document.getElementById('btnBuyMode').classList.toggle('active', mode==='buy');
+  document.getElementById('btnSellMode').classList.toggle('active', mode==='sell');
+  document.getElementById('qtyLabel').textContent = mode==='buy' ? 'Amount to buy (oz)' : 'Amount to sell (oz)';
+  document.getElementById('availLabel').textContent = mode==='buy' ? 'Available cash' : 'Available gold';
+  const btn = document.getElementById('tradeSubmitBtn');
+  btn.textContent = mode==='buy' ? 'Buy gold' : 'Sell gold';
+  btn.classList.toggle('sell-mode', mode==='sell');
+  document.getElementById('tradeMsg').textContent = '';
+  updateTradePreview();
+}
+
+function updateTradePreview(){
+  if(!currentUser) return;
+  const u = users[currentUser];
+  const qty = parseFloat(document.getElementById('tradeQty').value) || 0;
+  document.getElementById('prevSpot').textContent = fmtMoney(spot);
+  document.getElementById('prevTotal').textContent = fmtMoney(qty*spot);
+  document.getElementById('prevAvail').textContent = tradeMode==='buy' ? fmtMoney(u.balance) : u.gold.toFixed(4)+' oz';
+}
+
+function submitTrade(){
+  if(!currentUser) return;
+  const u = users[currentUser];
+  const qty = parseFloat(document.getElementById('tradeQty').value);
+  const msgEl = document.getElementById('tradeMsg');
+
+  if(!qty || qty <= 0){
+    msgEl.className = 'msg-line err';
+    msgEl.textContent = 'Enter a quantity greater than zero.';
+    return;
+  }
+  const total = qty * spot;
+
+  if(tradeMode === 'buy'){
+    if(total > u.balance){
+      msgEl.className = 'msg-line err';
+      msgEl.textContent = 'Insufficient cash balance for this order.';
+      return;
+    }
+    u.balance -= total;
+    u.gold += qty;
+    logTx(currentUser, 'buy', qty, spot, total);
+    msgEl.className = 'msg-line ok';
+    msgEl.textContent = `Bought ${qty.toFixed(4)} oz for ${fmtMoney(total)}.`;
+  } else {
+    if(qty > u.gold){
+      msgEl.className = 'msg-line err';
+      msgEl.textContent = "You don't hold that much gold to sell.";
+      return;
+    }
+    u.gold -= qty;
+    u.balance += total;
+    logTx(currentUser, 'sell', qty, spot, total);
+    msgEl.className = 'msg-line ok';
+    msgEl.textContent = `Sold ${qty.toFixed(4)} oz for ${fmtMoney(total)}.`;
+  }
+  document.getElementById('tradeQty').value = '';
+  updateTradePreview();
+  renderOverview();
+}
+
+// ---------- History ----------
+function logTx(email, type, qty, price, total, note){
+  const now = new Date();
+  const date = now.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  users[email].tx.push({date, type, qty, price, total, note});
+}
+
+function renderHistory(){
+  if(!currentUser) return;
+  const u = users[currentUser];
+  const tbody = document.getElementById('historyTable');
+  if(u.tx.length===0){
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No transactions yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = u.tx.slice().reverse().map(t=>`
+    <tr>
+      <td>${t.date}</td>
+      <td><span class="tag ${t.type}">${t.type}</span></td>
+      <td>${t.qty ? t.qty.toFixed(4)+' oz' : '—'}</td>
+      <td>${t.price ? fmtMoney(t.price) : '—'}</td>
+      <td>${fmtMoney(t.total)}</td>
+    </tr>`).join('');
+}
+
+// ---------- Wallet ----------
+function renderWallet(){
+  if(!currentUser) return;
+  document.getElementById('walletBalance').textContent = fmtMoney(users[currentUser].balance);
+  document.getElementById('walletMsg').textContent = '';
+}
+
+function walletAction(action){
+  if(!currentUser) return;
+  const u = users[currentUser];
+  const amt = parseFloat(document.getElementById('walletAmount').value);
+  const msgEl = document.getElementById('walletMsg');
+
+  if(!amt || amt <= 0){
+    msgEl.className = 'msg-line err';
+    msgEl.textContent = 'Enter an amount greater than zero.';
+    return;
+  }
+  if(action === 'withdraw' && amt > u.balance){
+    msgEl.className = 'msg-line err';
+    msgEl.textContent = 'Withdrawal exceeds your available cash balance.';
+    return;
+  }
+  if(action === 'deposit'){
+    u.balance += amt;
+    logTx(currentUser, 'deposit', null, null, amt);
+  } else {
+    u.balance -= amt;
+    logTx(currentUser, 'withdraw', null, null, amt);
+  }
+  msgEl.className = 'msg-line ok';
+  msgEl.textContent = `${action==='deposit'?'Deposited':'Withdrew'} ${fmtMoney(amt)} successfully.`;
+  document.getElementById('walletAmount').value = '';
+  renderWallet();
+  renderOverview();
+}
+
+// ---------- init ----------
+renderPrice();
+</script>
+
+</body>
+</html>
